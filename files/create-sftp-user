@@ -28,7 +28,7 @@ function validateArg() {
         return 1
     fi
 }
-
+log "userhomemode: ${USER_HOME_MODE}"
 log "Parsing user data: \"$1\""
 IFS=':' read -ra args <<< "$1"
 
@@ -67,7 +67,14 @@ fi
 
 useradd "${useraddOptions[@]}" "$user"
 mkdir -p "/home/$user"
-chown root:root "/home/$user"
+if [ "${USER_HOME_MODE}" = 'chroot' ]
+then
+    log "set ownership of directory to root"
+    chown root:root "/home/$user"
+else
+    log "set ownership of directory to $user"
+    chown ${user}: "/home/$user"
+fi
 chmod 755 "/home/$user"
 
 # Retrieving user id to use it in chown commands instead of the user name

@@ -272,7 +272,7 @@ function testWriteAccessToAutocreatedDirs() {
 }
 
 function testWriteAccessToLimitedChroot() {
-    # Modified sshd_config with chrooted home subdir
+    # Modified sshd_config_local with chrooted home subdir
     tmpConfig="$(mktemp)"
     sed 's/^ChrootDirectory.*/ChrootDirectory %h\/sftp/' \
         < "$testDir/../files/sshd_config" > "$tmpConfig"

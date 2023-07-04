@@ -1,5 +1,6 @@
 FROM debian:bullseye
 MAINTAINER Adrian Dvergsdal [atmoz.net]
+MAINTAINER Christian Roser  [github.com/achantinura]
 
 # Steps done in one RUN layer:
 # - Install packages
@@ -11,7 +12,8 @@ RUN apt-get update && \
     mkdir -p /var/run/sshd && \
     rm -f /etc/ssh/ssh_host_*key*
 
-COPY files/sshd_config /etc/ssh/sshd_config
+COPY files/sshd_config_chroot /etc/ssh/sshd_config_chroot
+COPY files/sshd_config_local /etc/ssh/sshd_config_local
 COPY files/create-sftp-user /usr/local/bin/
 COPY files/entrypoint /
 

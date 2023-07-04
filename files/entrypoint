@@ -6,11 +6,15 @@ trap 's=$?; echo "$0: Error on line "$LINENO": $BASH_COMMAND"; exit $s' ERR
 
 reArgsMaybe="^[^:[:space:]]+:.*$" # Smallest indication of attempt to use argument
 reArgSkip='^([[:blank:]]*#.*|[[:blank:]]*)$' # comment or empty line
+reUserLocal='^-' # user should be local without chrooting to home directory
 
 # Paths
 userConfPath="/etc/sftp/users.conf"
 userConfPathLegacy="/etc/sftp-users.conf"
 userConfFinalPath="/var/run/sftp/users.conf"
+
+# use chroot or local
+userHomeMode='chroot'
 
 function log() {
     echo "[$0] $*" >&2
@@ -41,6 +45,16 @@ if [ ! -f "$userConfFinalPath" ]; then
     if $startSshd; then
         # Append users from arguments to final config
         for user in "$@"; do
+
+            # check for chroot or local
+            if [[ "$user" =~ $reUserLocal ]]
+            then
+              userHomeMode='local'
+              log "user ${user} indicates, that no chroot should be used"
+              user=${user/#-/}
+              log "removed leading -: ${user}"
+            fi
+
             echo "$user" >> "$userConfFinalPath"
         done
     fi
@@ -57,7 +71,7 @@ if [ ! -f "$userConfFinalPath" ]; then
     if [ -f "$userConfFinalPath" ] && [ "$(wc -l < "$userConfFinalPath")" -gt 0 ]; then
         # Import users from final conf file
         while IFS= read -r user || [[ -n "$user" ]]; do
-            create-sftp-user "$user"
+            USER_HOME_MODE=$userHomeMode create-sftp-user "$user"
         done < "$userConfFinalPath"
     elif $startSshd; then
         log "FATAL: No users provided!"
@@ -91,6 +105,10 @@ if [ -d /etc/sftp.d ]; then
 fi
 
 if $startSshd; then
+    # copy sshd config
+    log "copying sshd config template"
+    cp /etc/ssh/sshd_config_${userHomeMode} /etc/ssh/sshd_config
+
     log "Executing sshd"
     exec /usr/sbin/sshd -D -e
 else
