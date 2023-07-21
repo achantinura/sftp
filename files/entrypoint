@@ -50,9 +50,7 @@ if [ ! -f "$userConfFinalPath" ]; then
             if [[ "$user" =~ $reUserLocal ]]
             then
               userHomeMode='local'
-              log "user ${user} indicates, that no chroot should be used"
               user=${user/#-/}
-              log "removed leading -: ${user}"
             fi
 
             echo "$user" >> "$userConfFinalPath"
@@ -89,6 +87,15 @@ if [ ! -f "$userConfFinalPath" ]; then
     # Restrict access from other users
     chmod 600 /etc/ssh/ssh_host_ed25519_key || true
     chmod 600 /etc/ssh/ssh_host_rsa_key || true
+else
+    # check user if local or chroot should be used
+    for user in "$@"; do
+        # check for chroot or local
+        if [[ "$user" =~ $reUserLocal ]]
+        then
+          userHomeMode='local'
+        fi
+    done
 fi
 
 # Source custom scripts, if any
